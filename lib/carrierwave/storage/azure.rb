@@ -61,7 +61,7 @@ module CarrierWave
         end
 
         def exists?
-          blob.nil?
+          !blob.nil?
         end
 
         def size
