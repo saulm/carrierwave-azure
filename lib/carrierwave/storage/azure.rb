@@ -119,7 +119,11 @@ module CarrierWave
         end
 
         def sign(path, options = {})
-          uri = @connection.generate_uri(path)
+          uri = if @uploader.asset_host
+                  URI("#{@uploader.asset_host}/#{path}")
+                else
+                  @connection.generate_uri(path)
+                end
           account = @uploader.send(:azure_storage_account_name)
           ::Azure::Core::Auth::SharedAccessSignature.new(uri, options, account).sign
         end
