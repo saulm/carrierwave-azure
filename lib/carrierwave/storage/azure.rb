@@ -43,7 +43,7 @@ module CarrierWave
 
         def url(options = {})
           _path = ::File.join(@uploader.azure_container, @path)
-          _url = if options.has_key?(:expiry) || private_container?
+          _url = if private_container?
                    signed_url(_path, options.slice(:start, :expiry, :permissions))
                  else
                    public_url(_path, options)
@@ -119,7 +119,11 @@ module CarrierWave
         end
 
         def sign(path, options = {})
-          uri = @connection.generate_uri(path)
+          uri = if @uploader.asset_host
+                  URI("#{@uploader.asset_host}/#{path}")
+                else
+                  @connection.generate_uri(path)
+                end
           account = @uploader.send(:azure_storage_account_name)
           ::Azure::Core::Auth::SharedAccessSignature.new(uri, options, account).sign
         end

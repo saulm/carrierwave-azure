@@ -40,6 +40,36 @@ describe CarrierWave::Storage::Azure::File do
         expect(subject).to eq "http://example.com/test/dummy.txt"
       end
     end
+
+    context 'in private container' do
+      before do
+        allow_any_instance_of(CarrierWave::Storage::Azure::File).to receive(:private_container?).and_return(true)
+        allow_any_instance_of(::Azure::Core::Auth::SharedAccessSignature).to receive(:create_query_values).and_return({ sig: 'sharedsignature' })
+        @expected_url = "http://example.com/test/dummy.png?sig=sharedsignature"
+      end
+
+      context 'with storage blob host' do
+        before do
+          allow(uploader).to receive(:azure_storage_blob_host).and_return('http://example.com')
+          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 10.seconds })
+        end
+
+        it 'should return URL with SAS query string' do
+          expect(@subject).to eq(@expected_url)
+        end
+      end
+
+      context 'with asset host' do
+        before do
+          allow(uploader).to receive(:asset_host).and_return('http://example.com')
+          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 10.seconds })
+        end
+
+        it 'should return URL with SAS query string' do
+          expect(@subject).to eq(@expected_url)
+        end
+      end
+    end
   end
 
   describe '#exists?' do
@@ -52,26 +82,6 @@ describe CarrierWave::Storage::Azure::File do
 
       it 'should return false' do
         expect(subject).to eql false
-      end
-    end
-  end
-
-  context 'with expire time options' do
-    before do
-      @now = Time.now
-      allow(uploader).to receive(:azure_container).and_return(ENV['PRIVATE_CONTAINER_NAME'] || 'private')
-      allow_any_instance_of(::Azure::Core::Auth::SharedAccessSignature).to receive(:create_query_values).and_return({ sig: 'sharedsignature' })
-    end
-
-    context 'with storage blob host' do
-      before do
-        allow(uploader).to receive(:azure_storage_blob_host).and_return('http://example.com')
-        @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 10.minutes })
-        @expected_url = "http://example.com/#{uploader.azure_container}/dummy.png?sig=sharedsignature"
-      end
-
-      it 'should return URL with SAS query string' do
-        expect(@subject).to eq(@expected_url)
       end
     end
   end
