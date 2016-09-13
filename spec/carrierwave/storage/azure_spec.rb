@@ -12,6 +12,7 @@ describe CarrierWave::Storage::Azure do
 
   shared_examples_for 'an expected return value' do
     let(:stored_file) do
+      allow_any_instance_of(CarrierWave::Storage::Azure::File).to receive(:private_container?).and_return(false)
       allow(uploader).to receive(:store_path).and_return('test/dummy.png')
       tempfile = Tempfile.new 'test.jpg'
       open(tempfile.path, 'w') do |f|

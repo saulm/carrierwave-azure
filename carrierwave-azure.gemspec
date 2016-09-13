@@ -16,9 +16,14 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^rspec})
   gem.require_paths = ['lib']
 
+  gem.add_runtime_dependency 'mime-types', '~> 1.25.1'
+
   gem.add_dependency 'carrierwave'
-  gem.add_dependency 'azure'
+  gem.add_dependency 'azure', '~> 0.6.4'
+  gem.add_dependency 'hashie'
+  gem.add_dependency 'addressable'
 
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'rspec', '~> 3'
+  gem.add_development_dependency 'dotenv'
 end
