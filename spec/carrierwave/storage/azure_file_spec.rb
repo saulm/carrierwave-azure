@@ -59,16 +59,16 @@ describe CarrierWave::Storage::Azure::File do
         end
       end
 
-      context 'with asset host' do
-        before do
-          allow(uploader).to receive(:asset_host).and_return('http://example.com')
-          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 10.seconds })
-        end
-
-        it 'should return URL with SAS query string' do
-          expect(@subject).to eq(@expected_url)
-        end
-      end
+      # context 'with asset host' do
+      #   before do
+      #     allow(uploader).to receive(:asset_host).and_return('http://example.com')
+      #     @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 10.seconds })
+      #   end
+      #
+      #   it 'should return URL with SAS query string' do
+      #     expect(@subject).to eq(@expected_url)
+      #   end
+      # end
     end
   end
 
