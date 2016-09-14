@@ -1,4 +1,5 @@
 require 'azure'
+require 'azure/blob/auth/shared_access_signature'
 
 module CarrierWave
   module Storage
@@ -23,8 +24,6 @@ module CarrierWave
       end
 
       class File
-        SAS_DEFAULT_EXPIRE_TIME = 30.seconds
-
         attr_reader :path
 
         def initialize(uploader, connection, path)
@@ -140,12 +139,10 @@ module CarrierWave
         end
 
         def signed_url(path, options = {})
-          now = options[:start] ? options[:start].to_i : Time.now.to_i
-          expire_time = now + (options[:expiry] ? options[:expiry].to_i : SAS_DEFAULT_EXPIRE_TIME)
+          expiry = options[:expiry] ? (Time.now.to_i + options[:expiry].to_i) : nil
           _options = { permissions: 'r',
-                       resource: 'b',
-                       expiry: Time.at(expire_time).utc.iso8601 }
-
+                       resource: 'b' }
+          _options[:expiry] = Time.at(expiry).utc.iso8601 if expiry
           sign( path, options.merge!(_options) ).to_s
         end
 

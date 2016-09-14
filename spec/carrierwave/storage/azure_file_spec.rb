@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'azure/blob/auth/shared_access_signature'
 
 describe CarrierWave::Storage::Azure::File do
   class TestUploader < CarrierWave::Uploader::Base
@@ -54,7 +55,7 @@ describe CarrierWave::Storage::Azure::File do
       context 'with storage blob host' do
         before do
           allow(uploader).to receive(:azure_storage_blob_host).and_return('http://example.com')
-          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 60.seconds })
+          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 30.seconds })
         end
 
         it 'should return URL with SAS query string' do
@@ -65,7 +66,7 @@ describe CarrierWave::Storage::Azure::File do
       context 'with asset host' do
         before do
           allow(uploader).to receive(:asset_host).and_return('http://example.com')
-          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 10.seconds })
+          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 30.seconds })
         end
 
         it 'should return URL with SAS query string' do
