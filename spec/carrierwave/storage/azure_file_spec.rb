@@ -13,36 +13,39 @@ describe CarrierWave::Storage::Azure::File do
   end
 
   describe '#url' do
-    before do
-      allow_any_instance_of(CarrierWave::Storage::Azure::File).to receive(:private_container?).and_return(false)
-    end
-
-    context 'with storage_blob_host' do
+    context 'in public container' do
       before do
-        allow(uploader).to receive(:azure_storage_blob_host).and_return('http://example.com')
+        allow_any_instance_of(CarrierWave::Storage::Azure::File).to receive(:private_container?).and_return(false)
       end
 
-      subject { CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.txt').url }
+      context 'with storage_blob_host' do
+        before do
+          allow(uploader).to receive(:azure_storage_blob_host).and_return('http://example.com')
+        end
 
-      it 'should return on asset_host' do
-        expect(subject).to eq "http://example.com/test/dummy.txt"
+        subject { CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.txt').url }
+
+        it 'should return on asset_host' do
+          expect(subject).to eq "http://example.com/test/dummy.txt"
+        end
       end
-    end
 
-    context 'with asset_host' do
-      before do
-        allow(uploader).to receive(:asset_host).and_return('http://example.com')
-      end
+      context 'with asset_host' do
+        before do
+          allow(uploader).to receive(:asset_host).and_return('http://example.com')
+        end
 
-      subject { CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.txt').url }
+        subject { CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.txt').url }
 
-      it 'should return on asset_host' do
-        expect(subject).to eq "http://example.com/test/dummy.txt"
+        it 'should return on asset_host' do
+          expect(subject).to eq "http://example.com/test/dummy.txt"
+        end
       end
     end
 
     context 'in private container' do
       before do
+        # allow(uploader).to receive(:azure_container).and_return(ENV['PRIVATE_CONTAINER_NAME'])
         allow_any_instance_of(CarrierWave::Storage::Azure::File).to receive(:private_container?).and_return(true)
         allow_any_instance_of(::Azure::Core::Auth::SharedAccessSignature).to receive(:create_query_values).and_return({ sig: 'sharedsignature' })
         @expected_url = "http://example.com/test/dummy.png?sig=sharedsignature"
