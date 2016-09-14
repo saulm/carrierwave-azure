@@ -14,13 +14,13 @@ describe CarrierWave::Storage::Azure do
     let(:stored_file) do
       allow_any_instance_of(CarrierWave::Storage::Azure::File).to receive(:private_container?).and_return(false)
       allow(uploader).to receive(:store_path).and_return('test/dummy.png')
-      tempfile = Tempfile.new 'test.jpg'
+      tempfile = Tempfile.new 'test.png'
       open(tempfile.path, 'w') do |f|
         f.print '1234567890'
       end
       storage.store! CarrierWave::SanitizedFile.new(
         tempfile:     tempfile,
-        filename:     'test.jpg',
+        filename:     'test.png',
         content_type: 'image/png'
       )
     end
