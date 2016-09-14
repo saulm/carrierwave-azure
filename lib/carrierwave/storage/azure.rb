@@ -42,7 +42,7 @@ module CarrierWave
         def url(options = {})
           _path = ::File.join(@uploader.azure_container, @path)
           _url = if private_container?
-                   signed_url(_path, options.slice(:start, :expiry, :permissions))
+                   signed_url(_path, options.slice(:expiry))
                  else
                    public_url(_path, options)
                  end
@@ -140,8 +140,7 @@ module CarrierWave
 
         def signed_url(path, options = {})
           expiry = options[:expiry] ? (Time.now.to_i + options[:expiry].to_i) : nil
-          _options = { permissions: 'r',
-                       resource: 'b' }
+          _options = { permissions: 'r', resource: 'b' }
           _options[:expiry] = Time.at(expiry).utc.iso8601 if expiry
           sign( path, options.merge!(_options) ).to_s
         end
