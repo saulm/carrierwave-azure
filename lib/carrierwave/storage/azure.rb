@@ -1,5 +1,4 @@
 require 'azure'
-require 'azure/core/auth/shared_access_signature'
 
 module CarrierWave
   module Storage
@@ -109,13 +108,18 @@ module CarrierWave
         end
 
         def get_container_acl(container_name, options = {})
-          acl_data = @connection.get_container_acl(container_name, options)
-          acl = if acl_data.is_a?(Array)
-                  acl_data.size > 0 ? acl_data[0] : nil
-                else
-                  acl_data
-                end
-          acl
+          begin
+            acl_data = @connection.get_container_acl(container_name, options)
+            acl = if acl_data.is_a?(Array)
+                    acl_data.size > 0 ? acl_data[0] : nil
+                  else
+                    acl_data
+                  end
+            acl
+          rescue ::Azure::Core::Http::HTTPError => exception
+            puts "#{self.class.name}.get_container_acl raised HTTPError exception, with reason:\n #{exception.message}"
+            nil
+          end
         end
 
         def sign(path, options = {})
@@ -125,18 +129,24 @@ module CarrierWave
                   @connection.generate_uri(path)
                 end
           account = @uploader.send(:azure_storage_account_name)
-          ::Azure::Core::Auth::SharedAccessSignature.new(uri, options, account).sign
+          secret_key = @uploader.send(:azure_storage_access_key)
+          ::Azure::Blob::Auth::SharedAccessSignature.new(account, secret_key)
+                                                    .signed_uri(uri, options)
         end
 
         def private_container?
           acl = get_container_acl( @uploader.send(:azure_container), {} )
-          acl.public_access_level.nil?
+          acl && acl.public_access_level.nil?
         end
 
         def signed_url(path, options = {})
           now = options[:start] ? options[:start].to_i : Time.now.to_i
           expire_time = now + (options[:expiry] ? options[:expiry].to_i : SAS_DEFAULT_EXPIRE_TIME)
-          sign(path, options.merge!(permissions: 'r', resource: 'b', expiry: Time.at(expire_time).utc.iso8601))
+          _options = { permissions: 'r',
+                       resource: 'b',
+                       expiry: Time.at(expire_time).utc.iso8601 }
+
+          sign( path, options.merge!(_options) ).to_s
         end
 
         def public_url(path, options = {})

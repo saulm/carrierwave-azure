@@ -47,14 +47,14 @@ describe CarrierWave::Storage::Azure::File do
       before do
         # allow(uploader).to receive(:azure_container).and_return(ENV['PRIVATE_CONTAINER_NAME'])
         allow_any_instance_of(CarrierWave::Storage::Azure::File).to receive(:private_container?).and_return(true)
-        allow_any_instance_of(::Azure::Core::Auth::SharedAccessSignature).to receive(:create_query_values).and_return({ sig: 'sharedsignature' })
+        allow_any_instance_of(Azure::Blob::Auth::SharedAccessSignature).to receive(:query_hash).and_return({ sig: 'sharedsignature' })
         @expected_url = "http://example.com/test/dummy.png?sig=sharedsignature"
       end
 
       context 'with storage blob host' do
         before do
           allow(uploader).to receive(:azure_storage_blob_host).and_return('http://example.com')
-          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 10.seconds })
+          @subject = CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').url({ expiry: 60.seconds })
         end
 
         it 'should return URL with SAS query string' do
@@ -81,7 +81,7 @@ describe CarrierWave::Storage::Azure::File do
         allow(storage.connection).to receive(:get_blob).and_return(nil)
       end
 
-      subject { CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.txt').exists? }
+      subject { CarrierWave::Storage::Azure::File.new(uploader, storage.connection, 'dummy.png').exists? }
 
       it 'should return false' do
         expect(subject).to eql false
