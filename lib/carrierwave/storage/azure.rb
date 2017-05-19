@@ -17,10 +17,7 @@ module CarrierWave
       end
 
       def connection
-        account = ENV["AZURE_STORAGE_ACCOUNT"]
-        secret_key = ENV["AZURE_STORAGE_ACCESS_KEY"]
-
-        client = ::Azure::Storage::Client.create(:storage_account_name => account, :storage_access_key => secret_key)
+        client = ::Azure::Storage::Client.create(:storage_account_name => @uploader.azure_storage_account_name, :storage_access_key => @uploader.azure_storage_access_key)
         client.blob_client
       end
 
@@ -149,19 +146,14 @@ module CarrierWave
         end
 
         def sign(path, options = {})
-          uri = if @uploader.asset_host
-                  URI("#{@uploader.asset_host}/#{path}")
-                else
-                  @connection.generate_uri(path)
-                end
-          account = ENV["AZURE_STORAGE_ACCOUNT"]
-          secret_key = ENV["AZURE_STORAGE_ACCESS_KEY"]
-          ::Azure::Blob::Auth::SharedAccessSignature.new(account, secret_key)
-                                                    .signed_uri(uri, options)
+          uri = @connection.generate_uri(path)
+          account = @uploader.azure_storage_account_name
+          secret_key = @uploader.azure_storage_access_key
+          ::Azure::Blob::Auth::SharedAccessSignature.new(account, secret_key).signed_uri(uri, options)
         end
 
         def private_container?
-          acl = get_container_acl( @uploader.send(:azure_container), {} )
+          acl = get_container_acl(@uploader.azure_container, {} )
           acl && acl.public_access_level.nil?
         end
 
@@ -173,11 +165,7 @@ module CarrierWave
         end
 
         def public_url(path, options = {})
-          if @uploader.asset_host
-            "#{@uploader.asset_host}/#{path}"
-          else
-            @connection.generate_uri(path).to_s
-          end
+          @connection.generate_uri(path).to_s
         end
       end
     end

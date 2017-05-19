@@ -26,7 +26,6 @@ CarrierWave.configure do |config|
   config.azure_storage_access_key = 'YOUR STORAGE ACCESS KEY'
   config.azure_storage_blob_host = 'YOUR STORAGE BLOB HOST' # optional
   config.azure_container = 'YOUR CONTAINER NAME'
-  config.asset_host = 'YOUR CDN HOST' # optional
 end
 ```
 
