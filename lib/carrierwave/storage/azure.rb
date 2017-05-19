@@ -42,20 +42,24 @@ module CarrierWave
         end
 
         def chunked_upload(file)
-          @connection.delete_blob(@uploader.azure_container, @path)
+          begin
+            @connection.delete_blob(@uploader.azure_container, @path)
+          rescue
+          end
           blocks = []
-          pool = ::Concurrent::FixedThreadPool.new(50)
+          pool = ::Concurrent::FixedThreadPool.new(20)
 
           #Ugly but http://www.rubydoc.info/github/jnicklas/carrierwave/CarrierWave/SanitizedFile#read-instance_method
           file_contents = file.read
 
-          chunk_size = 10000000 #10MB
+          chunk_size = 2000000
           (0..file_contents.size).step(chunk_size).each do |step|
             chunk = file_contents.byteslice(step..step+chunk_size-1)
             block_id = Base64.strict_encode64(::SecureRandom.uuid)
-            blocks << block_id
+            blocks << [block_id, :uncommited]
+
             pool.post do
-              block = @connection.put_blob_block(@uploader.azure_container, @path, block_id, chunk)
+              @connection.put_blob_block(@uploader.azure_container, @path, block_id, chunk)
             end
           end
           pool.shutdown
