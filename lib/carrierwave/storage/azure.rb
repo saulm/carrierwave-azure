@@ -1,5 +1,7 @@
 require 'azure'
+require 'azure/storage'
 require 'azure/blob/auth/shared_access_signature'
+require 'concurrent'
 
 module CarrierWave
   module Storage
@@ -15,12 +17,11 @@ module CarrierWave
       end
 
       def connection
-        @connection ||= begin
-          %i(storage_account_name storage_access_key storage_blob_host).each do |key|
-            ::Azure.config.send("#{key}=", uploader.send("azure_#{key}"))
-          end
-          ::Azure::Blob::BlobService.new
-        end
+        account = ENV["AZURE_STORAGE_ACCOUNT"]
+        secret_key = ENV["AZURE_STORAGE_ACCESS_KEY"]
+
+        client = ::Azure::Storage::Client.create(:storage_account_name => account, :storage_access_key => secret_key)
+        client.blob_client
       end
 
       class File
@@ -33,10 +34,36 @@ module CarrierWave
         end
 
         def store!(file)
-          @content = file.read
-          @content_type = file.content_type
-          @connection.create_block_blob(@uploader.azure_container, @path, @content, content_type: @content_type)
+          if file.size < 50000000 #50MB
+            @content = file.read
+            @content_type = file.content_type
+            @connection.create_block_blob(@uploader.azure_container, @path, @content, "content_type" => @content_type, "x-ms-version" => "2016-05-31")
+          else
+            chunked_upload(file)
+          end
           true
+        end
+
+        def chunked_upload(file)
+          @connection.delete_blob(@uploader.azure_container, @path)
+          blocks = []
+          pool = ::Concurrent::FixedThreadPool.new(50)
+
+          #Ugly but http://www.rubydoc.info/github/jnicklas/carrierwave/CarrierWave/SanitizedFile#read-instance_method
+          file_contents = file.read
+
+          chunk_size = 10000000 #10MB
+          (0..file_contents.size).step(chunk_size).each do |step|
+            chunk = file_contents.byteslice(step..step+chunk_size-1)
+            block_id = Base64.strict_encode64(::SecureRandom.uuid)
+            blocks << block_id
+            pool.post do
+              block = @connection.put_blob_block(@uploader.azure_container, @path, block_id, chunk)
+            end
+          end
+          pool.shutdown
+          pool.wait_for_termination
+          @connection.commit_blob_blocks(@uploader.azure_container, @path, blocks)
         end
 
         def url(options = {})
@@ -63,7 +90,7 @@ module CarrierWave
         end
 
         def exists?
-          !blob.nil?
+          @connection.list_blobs(@uploader.azure_container).collect{|b|b.name}.include? @path
         end
 
         def size
@@ -127,8 +154,8 @@ module CarrierWave
                 else
                   @connection.generate_uri(path)
                 end
-          account = @uploader.send(:azure_storage_account_name)
-          secret_key = @uploader.send(:azure_storage_access_key)
+          account = ENV["AZURE_STORAGE_ACCOUNT"]
+          secret_key = ENV["AZURE_STORAGE_ACCESS_KEY"]
           ::Azure::Blob::Auth::SharedAccessSignature.new(account, secret_key)
                                                     .signed_uri(uri, options)
         end

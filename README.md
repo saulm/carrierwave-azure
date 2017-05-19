@@ -2,6 +2,8 @@
 
 Windows Azure blob storage support for [CarrierWave](https://github.com/carrierwaveuploader/carrierwave)
 
+With support for files bigger than 64MB, uploading by chunks, using (https://github.com/Azure/azure-storage-ruby)
+
 ## Installation
 
 Add this line to your application's Gemfile:
