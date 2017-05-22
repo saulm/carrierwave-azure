@@ -74,7 +74,7 @@ module CarrierWave
                  else
                    public_url(_path, options)
                  end
-          _url
+          URI.escape(_url)
         end
 
         def read
