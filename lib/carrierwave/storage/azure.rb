@@ -31,13 +31,7 @@ module CarrierWave
         end
 
         def store!(file)
-          if file.size < 50000000 #50MB
-            @content = file.read
-            @content_type = file.content_type
-            @connection.create_block_blob(@uploader.azure_container, @path, @content, "content_type" => @content_type, "x-ms-version" => "2016-05-31")
-          else
-            chunked_upload(file)
-          end
+          chunked_upload(file)
           true
         end
 

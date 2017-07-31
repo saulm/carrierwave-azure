@@ -5,8 +5,8 @@ require 'carrierwave/azure/version'
 Gem::Specification.new do |gem|
   gem.name          = 'carrierwave-azure'
   gem.version       = Carrierwave::Azure::VERSION
-  gem.authors       = ['Yusuke Shibahara']
-  gem.email         = ['yusuke.shibahara@heathrow.co.jp']
+  gem.authors       = ['Yusuke Shibahara', 'Saul Moncada']
+  gem.email         = ['']
   gem.summary       = %q{Windows Azure blob storage support for CarrierWave}
   gem.description   = %q{Allows file upload to Azure with the officail sdk}
   gem.homepage      = 'https://github.com/unosk/carrierwave-azure'
