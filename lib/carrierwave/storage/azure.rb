@@ -2,6 +2,7 @@ require 'azure'
 require 'azure/storage'
 require 'azure/blob/auth/shared_access_signature'
 require 'concurrent'
+require 'rack/mime'
 
 module CarrierWave
   module Storage
@@ -58,7 +59,7 @@ module CarrierWave
           end
           pool.shutdown
           pool.wait_for_termination
-          @connection.commit_blob_blocks(@uploader.azure_container, @path, blocks)
+          @connection.commit_blob_blocks(@uploader.azure_container, @path, blocks, {content_type:  content_type})
         end
 
         def url(options = {})
@@ -76,12 +77,7 @@ module CarrierWave
         end
 
         def content_type
-          @content_type = blob.properties[:content_type] if @content_type.nil? && !blob.nil?
-          @content_type
-        end
-
-        def content_type=(new_content_type)
-          @content_type = new_content_type
+          @content_type ||= MIME::Types.type_for(extension)[0].to_s
         end
 
         def exists?
@@ -97,7 +93,7 @@ module CarrierWave
         end
 
         def extension
-          @path.split('.').last
+          @extension ||= @path.split('.').last
         end
 
         def delete
